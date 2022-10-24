@@ -1,5 +1,4 @@
-# Create dinucleotide RNA dataset for QCArchive submission (RNA-dinucleotide-single-points)
-
+# Create dinucleotide RNA dataset for QCArchive submission
 
 Download json/csv files from [RNA BGSU](https://www.bgsu.edu/research/rna.html)
 ------
@@ -32,11 +31,13 @@ Check downloaded cif/pdb files
 
 - `check_motif.ipynb`  
     - Check for missing atoms, inconsistent residue numbers, residue names. Following files failed to pass the test. Filename added with "warning" or "missing_atoms" and ignored for further process. 
-        - `HL_44730.2.cif, HL_51090.1.cif, HL_01181.4.cif, HL_70505.1.cif, HL_35188.1.cif, HL_49873.1.cif, HL_19239.1.cif, HL_48810.1.cif, IL_46464.1.cif, IL_51971.1.cif, IL_77341.1.cif, IL_39900.1.cif, IL_16160.1.cif, IL_50112.1.cif, IL_57188.3.cif, IL_89836.1.cif, IL_22427.1.cif, IL_80617.1.cif, IL_64414.1.cif, J3_7RQB_030.cif, J3_7RQ8_031.cif, J3_7RQ8_003.cif, J3_7RQB_003.cif`
+        HL: `HL_44730.2.cif, HL_51090.1.cif, HL_01181.4.cif, HL_70505.1.cif, HL_35188.1.cif, HL_49873.1.cif, HL_19239.1.cif, HL_48810.1.cif`  
+        IL: `IL_46464.1.cif, IL_51971.1.cif, IL_16160.1.cif, IL_50053.1.cif, IL_50112.1.cif, IL_57188.3.cif, IL_89836.1.cif, IL_22427.1.cif, IL_80617.1.cif, IL_77034.1.cif`  
+        J3: `J3_6ZVK_022.cif, J3_7RQB_030.cif, J3_5VPP_042.cif, J3_2UXC_006.cif, J3_1N33_006.cif, J3_5E81_021.cif, J3_5IBB_015.cif, J3_6CZR_010.cif, J3_1N32_006.cif, J3_6ORD_043.cif, J3_4GCW_002.cif, J3_7OIF_022.cif, J3_5VPO_043.cif, J3_4GCW_001.cif, J3_5OT7_010.cif, J3_6GSK_040.cif, J3_6NTA_015.cif, J3_6GSL_014.cif, J3_4TUE_016.cif, J3_5IB8_015.cif, J3_7U2I_003.cif, J3_4V4J_003.cif, J3_4V5K_012.cif, J3_7ACJ_021.cif, J3_2UXD_006.cif, J3_4V5G_039.cif, J3_5VPP_015.cif, J3_7U2I_030.cif, J3_4V5K_034.cif, J3_7OT5_023.cif, J3_6Q9A_022.cif, J3_1HNW_006.cif, J3_6NTA_008.cif, J3_6GSL_034.cif, J3_5IBB_041.cif, J3_4DR7_006.cif, J3_4V5G_015.cif, J3_6ORD_015.cif, J3_6CFJ_031.cif, J3_7AC7_022.cif, J3_4B3R_006.cif, J3_7NWG_002.cif, J3_5VPO_016.cif, J3_7RQB_003.cif, J3_6O8W_009.cif, J3_5T7V_001.cif, J3_6NTA_042.cif, J3_6GSK_015.cif, J3_6GSL_041.cif, J3_4TUE_043.cif, J3_5IB8_041.cif, J3_6Q97_017.cif`
 
 
 
-Split loops into three consecutive bases and perform clustering for each base set
+Split loops into dinucleotides (two consectutive nucleotides) and perform clustering
 ------
 
 - `split_motif.ipynb`  
@@ -44,54 +45,18 @@ Split loops into three consecutive bases and perform clustering for each base se
     - Atoms `P`, `OP1`, and `OP2` were deleted from 5' base.
 
 - `cluster_motifs.ipynb`
-    - Each triple base set was clustered with bottom-up (agglomerative) hierarchical clustering with average linking.
-    - Euclidean distances between set of pre-defined atom pairs were used as input features. Also tried torsion angles as input features for clustering but internal distances were better.
-    - Distance threhold of "1" was used for clustering. This was defined so that the number of cluster centroids from each triple base set were ~4000 structures. The maximum RMSD measured from the centroid structure for each cluster was also monitored to ensure structures are well-clustered. Maximum RMSD from all clusters are below ~2.4 Angstroms.
+    - Each dinucleotide was clustered with bottom-up (agglomerative) hierarchical clustering with average linking.
+    - Euclidean distances between set of pre-defined atom pairs were used as input features.
 
-
-
-Edit 5' base residues and add TER from base pair catalogs and base triple database structures
-------
-
-- `edit_base.ipynb`  
-    - Atoms `P`, `OP1`, and `OP2` were deleted from 5' base.
-    - TER was added to insure bases were disconnected
 
 
 
 Add hydrogen atoms and minimize structure
 ------
 
-- `script/check_files.py`
-    - All files were checked if they could be loaded with PDBFixer
-    - Warning found for `BP_tWS_AG.pdb` and `BP_cWS_AC.pdb`. TER was inserted in the wrong position. Manually fixed.
-
 - `script/openmm_implicit_minimizer.py`
     - Added hydrogen prior to minimization
     - Implicit solvent applied (GBN2)
     - Heavy atom restraint applied (30 kcal/mol/A^2)
-    - 10 step NVT to check nothing fuzzy with the input structure (***removed from latest version***)
-        - Errors raised for some Triple base structures downloaded from [RNA Base Triple Database](http://rna.bgsu.edu/triples/triples.php)
-        - It turns out that some triple base structures (e.g. Triple_tWH_cSS_CAG.pdb/Triple_tWH_cSS_CAG.cif) have overlapping atoms... These errors were raised for modeled structures. No problems detected for experimental structures (i.e. "exemplar").   
+    - all minimized files are stored in `minimized/pdb`
 
-
-
-Test creating dataset prior to QCArchive submission
-------
-
-- `qca-dataset-submission_TEST/generate-dataset.ipynb`
-    - [Isomorphic AssertionError](https://github.com/choderalab/rna_bgsu/issues/1) issue
-        - motivated to check all strtuctures and remove invalid structures (`check_structure.py`)
-- `qca-dataset-submission_TEST/check_structures.py`
-    - check pdb to rdkit conversion, stererocenters, stereobonds (input pdb: structures by exported by `script/openmm_implicit_minimizer.py`)
-    - add suffix to pdb if warnings and/or problems were found and move problematic strucutres to a different directory
-    >cd minimized
-    >mkdir error
-    >mv *.pdb.\* error
-    - **pdb structures that passed the check and conveted to rdkit mol object are saved as pickle**
-    - `rdmols_basepairCATALOG.pkl`, `rdmols_loopMOTIFS.pkl`, `rdmols_triplebase_exemplar.pkl` are used for QCArchive submission
-    - `rdmols_triplebase.pkl` was excluded from the dataset because these are modeled structures and invalid structures were found for several cases.
-- `qca-dataset-submission_TEST/convert_pdb2sdf.sh`
-    - convert pdb structures that passed `qca-dataset-submission_TEST/check_structures.py` to sdf using schrodinger software (pdbconvert: pdb -> mae / canvasConvert: mae -> sdf)
-    - compress pdb/sdf for basepairCATALOG, loopMOTIFS, triplebaseDB, triplebaseDB_exemplar, respectively
-        - files are stored in `minimized` dircetory
